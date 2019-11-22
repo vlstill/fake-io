@@ -47,19 +47,19 @@ import           Safe
 data IOException = UserError String
                  | FileNotFound FilePath
                  | DirectoryNotFound FilePath
-  deriving (Show,Read)
+  deriving (Show,Read,Eq)
 
 -- | User input.
 data Input = Input
   { inputStdin :: ![String]
   , inputFiles :: !(Map String String)
-  } deriving (Show)
+  } deriving (Show,Eq)
 
 -- | IO monad output.
 data Output = Output
   { outputStdout :: ![String]
   , outputFiles  :: !(Map String String)
-  } deriving (Show,Read)
+  } deriving (Show,Read,Eq)
 
 instance Semigroup Output where
   (Output a x) <> (Output b y) = Output (a <> b) (x <> y)
@@ -77,7 +77,7 @@ data Interrupt
   | InterruptException !IOException -- ^ When you receive this
                                     -- interrupt, you should consider
                                     -- the computation as ended.
-  deriving (Show,Read)
+  deriving (Show,Read,Eq)
 instance Error Interrupt
 
 -- | A pure IO monad.
