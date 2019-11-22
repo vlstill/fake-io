@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- | Pure IO monad, intended for educational use.
 
-module PureIO
+module System.FakeIO
   (-- * The IO monad and its machinery
    runIO
   ,IO
