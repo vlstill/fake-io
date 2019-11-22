@@ -55,6 +55,12 @@ data Input = Input
   , inputFiles :: !(Map String String)
   } deriving (Show, Eq)
 
+instance Semigroup Input where
+  Input lns0 files0 <> Input lns1 files1 = Input (lns0 <> lns1) (files0 <> files1)
+
+instance Monoid Input where
+  mempty = Input mempty mempty
+
 -- | IO monad output.
 data Output = Output
   { outputStdout :: ![String]
