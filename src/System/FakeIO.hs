@@ -34,8 +34,8 @@ import           Control.Monad.State
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
-import           Data.Monoid
-import           Data.Semigroup
+import           Data.Monoid ( Monoid ( mappend, mempty ) )
+import           Data.Semigroup ( Semigroup ( (<>) ) )
 import           Prelude hiding (IO,putStr,putStrLn,getLine,readLn,print,readIO,readFile,writeFile,appendFile)
 import           Data.List
 import           Safe
