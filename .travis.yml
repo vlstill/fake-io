@@ -21,6 +21,7 @@ before_install:
 
 script:
     - cabal v1-install
+    - cabal v1-test
 
 notifications:
   email:
