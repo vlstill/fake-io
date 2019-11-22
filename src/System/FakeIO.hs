@@ -27,6 +27,7 @@ module System.FakeIO
   )
   where
 
+import           Control.Applicative ( liftA2 )
 import           Control.Arrow ( first, second )
 import           Control.Monad.Except ( ExceptT, runExceptT, throwError, catchError )
 import           Control.Monad.State ( State, runState, modify, get, gets )
@@ -92,6 +93,13 @@ newtype IO a = IO
   -- would aid programming minutely, such instances are internals that
   -- we don't want to export.
   deriving (Monad, Functor, Applicative)
+
+instance Semigroup a => Semigroup (IO a) where
+  (<>) = liftA2 (<>)
+
+instance Monoid a => Monoid (IO a) where
+  mempty = pure mempty
+  mappend = (<>)
 
 -- | Run the IO monad. This should be called in succession. Depending
 -- on the type of interrupt, this function should be re-run with the
