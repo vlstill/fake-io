@@ -27,17 +27,16 @@ module System.FakeIO
   )
   where
 
-import           Control.Applicative
-import           Control.Arrow
-import           Control.Monad.Except
-import           Control.Monad.State
-import           Data.Map (Map)
+import           Control.Arrow ( first, second )
+import           Control.Monad.Except ( ExceptT, runExceptT, throwError, catchError )
+import           Control.Monad.State ( State, runState, modify, get, gets )
+import           Data.Map ( Map )
 import qualified Data.Map as M
-import           Data.Maybe
+import           Data.Maybe ( fromMaybe, isJust )
 import           Data.Monoid ( Monoid ( mappend, mempty ) )
 import           Data.Semigroup ( Semigroup ( (<>) ) )
 import           Prelude hiding ( IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile )
-import           Data.List
+import           Data.List ( isPrefixOf, isSuffixOf )
 import           Text.Read ( readMaybe )
 
 --------------------------------------------------------------------------------
