@@ -1,5 +1,5 @@
 name:                fake-io
-version:             0.2.1.4
+version:             0.2.1.5
 synopsis:            Fake IO
 description:         Implementation of fake and pure IO monad for educational and testing purposes.
 license:             BSD3
@@ -8,8 +8,10 @@ author:              Chris Done, Vladimír Štill
 maintainer:          hs-fake-io@vstill.eu
 copyright:           2014 Chris Done, 2019 Vladimír Štill
 category:            Development, Education
+homepage:            https://github.com/vlstill/fake-io
 build-type:          Simple
 cabal-version:       >=1.8
+tested-with:         GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5, GHC == 8.8.1
 
 library
   hs-source-dirs:    src/
