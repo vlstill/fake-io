@@ -105,14 +105,12 @@ interrupt = IO . throwError
 
 -- | Modify the given file.
 modifyFile :: FilePath -> (String -> String) -> IO ()
-modifyFile fp f =
-  modifyFiles (M.alter (\contents -> Just (f (fromMaybe "" contents))) fp)
+modifyFile fp f = modifyFiles (M.alter (Just . f . fromMaybe "") fp)
 
 -- | Modify the output files.
 modifyFiles :: (Map FilePath String -> Map FilePath String) -> IO ()
 modifyFiles f = IO (modify (\(i,o) -> (i,updateFile o)))
-  where updateFile (Output stdout files) =
-          (Output stdout (f files))
+  where updateFile (Output stdout files) = Output stdout (f files)
 
 --------------------------------------------------------------------------------
 -- Library
@@ -198,14 +196,12 @@ writeFile fp = modifyFile fp . const
 --
 -- > main = appendFile "squares" (show [(x,x*x) | x <- [0,0.1..2]])
 appendFile :: FilePath -> String -> IO ()
-appendFile fp more = modifyFile fp (\contents -> contents ++ more)
+appendFile fp more = modifyFile fp (++ more)
 
 -- | The operation 'doesFileExist' returns 'True' if the argument file
 -- exists, and 'False' otherwise.
 doesFileExist :: FilePath -> IO Bool
-doesFileExist fp =
-  fmap (isJust)
-       (IO (gets (M.lookup fp . outputFiles . snd)))
+doesFileExist fp = fmap isJust (IO (gets (M.lookup fp . outputFiles . snd)))
 
 -- | 'removeFile' /file/ removes the directory entry for an existing
 -- file /file/.
@@ -223,5 +219,5 @@ getDirectoryContents fp =
      case filter (isPrefixOf fp') entries of
        [] -> throw (DirectoryNotFound fp)
        fs -> return fs
-  where fp' | isSuffixOf "/" fp = fp
+  where fp' | "/" `isSuffixOf` fp = fp
             | otherwise = fp ++ "/"
