@@ -17,7 +17,7 @@ module System.FakeIO
   ,print
   ,readIO
   ,throw
-  ,PureIO.catch
+  ,catch
   ,readFile
   ,writeFile
   ,appendFile
@@ -35,6 +35,7 @@ import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Semigroup
 import           Prelude hiding (IO,putStr,putStrLn,getLine,readLn,print,readIO,readFile,writeFile,appendFile)
 import           Data.List
 import           Safe
@@ -60,9 +61,11 @@ data Output = Output
   , outputFiles  :: !(Map String String)
   } deriving (Show,Read)
 
+instance Semigroup Output where
+  (Output a x) <> (Output b y) = Output (a <> b) (x <> y)
+
 instance Monoid Output where
   mempty = Output mempty mempty
-  (Output a x) `mappend` (Output b y) = Output (a <> b) (x <> y)
 
 -- | Something that interrupts the flow of the IO monad.
 data Interrupt
