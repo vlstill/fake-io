@@ -97,7 +97,7 @@ newtype IO a = IO
 instance Semigroup a => Semigroup (IO a) where
   (<>) = liftA2 (<>)
 
-instance Monoid a => Monoid (IO a) where
+instance (Semigroup a, Monoid a) => Monoid (IO a) where
   mempty = pure mempty
   mappend = (<>)
 
