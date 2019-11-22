@@ -15,7 +15,7 @@ library
   hs-source-dirs:    src/
   ghc-options:       -Wall -O2
   exposed-modules:   System.FakeIO
-  build-depends:     base >= 4.10 && <5,
+  build-depends:     base >= 4.9 && <5,
                      safe,
                      mtl,
                      containers
