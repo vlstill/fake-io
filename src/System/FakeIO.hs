@@ -38,7 +38,7 @@ import           Data.Monoid ( Monoid ( mappend, mempty ) )
 import           Data.Semigroup ( Semigroup ( (<>) ) )
 import           Prelude hiding (IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile)
 import           Data.List
-import           Safe
+import           Text.Read ( readMaybe )
 
 --------------------------------------------------------------------------------
 -- IO monad and machinery
@@ -144,7 +144,7 @@ getLine = do
 -- parse failure to the 'IO' monad instead of terminating the program.
 readIO :: Read a => String -> IO a
 readIO s =
-  case readMay s of
+  case readMaybe s of
     Nothing -> throw (UserError "readIO: no parse")
     Just r -> return r
 
