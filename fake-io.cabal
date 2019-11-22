@@ -21,3 +21,14 @@ library
                      safe,
                      mtl,
                      containers
+
+Test-Suite unit-fake-io
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+
+    main-is:          qc.hs
+
+    build-depends:    base, fake-io,
+                      QuickCheck
+
+    default-language: Haskell2010
