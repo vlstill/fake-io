@@ -66,6 +66,7 @@ instance Semigroup Output where
 
 instance Monoid Output where
   mempty = Output mempty mempty
+  mappend = (<>)
 
 -- | Something that interrupts the flow of the IO monad.
 data Interrupt
