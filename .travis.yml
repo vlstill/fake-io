@@ -20,6 +20,8 @@ before_install:
     - cabal update
 
 script:
+    - cabal v1-configure --enable-tests
+    - cabal v1-install --only-dependencies --enable-tests
     - cabal v1-install
     - cabal v1-test
 
