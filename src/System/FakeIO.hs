@@ -3,27 +3,27 @@
 
 module System.FakeIO
   (-- * The IO monad and its machinery
-   runIO
-  ,IO
-  ,Input(..)
-  ,Output(..)
-  ,Interrupt(..)
+    runIO
+  , IO
+  , Input(..)
+  , Output(..)
+  , Interrupt(..)
   -- * Library of actions
-  ,IOException(..)
-  ,putStrLn
-  ,putStr
-  ,getLine
-  ,readLn
-  ,print
-  ,readIO
-  ,throw
-  ,catch
-  ,readFile
-  ,writeFile
-  ,appendFile
-  ,doesFileExist
-  ,removeFile
-  ,getDirectoryContents
+  , IOException(..)
+  , putStrLn
+  , putStr
+  , getLine
+  , readLn
+  , print
+  , readIO
+  , throw
+  , catch
+  , readFile
+  , writeFile
+  , appendFile
+  , doesFileExist
+  , removeFile
+  , getDirectoryContents
   )
   where
 
@@ -36,7 +36,7 @@ import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Monoid ( Monoid ( mappend, mempty ) )
 import           Data.Semigroup ( Semigroup ( (<>) ) )
-import           Prelude hiding (IO,putStr,putStrLn,getLine,readLn,print,readIO,readFile,writeFile,appendFile)
+import           Prelude hiding (IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile)
 import           Data.List
 import           Safe
 
@@ -47,22 +47,22 @@ import           Safe
 data IOException = UserError String
                  | FileNotFound FilePath
                  | DirectoryNotFound FilePath
-  deriving (Show,Read,Eq)
+  deriving (Show, Read, Eq)
 
 -- | User input.
 data Input = Input
   { inputStdin :: ![String]
   , inputFiles :: !(Map String String)
-  } deriving (Show,Eq)
+  } deriving (Show, Eq)
 
 -- | IO monad output.
 data Output = Output
   { outputStdout :: ![String]
   , outputFiles  :: !(Map String String)
-  } deriving (Show,Read,Eq)
+  } deriving (Show, Read, Eq)
 
 instance Semigroup Output where
-  (Output a x) <> (Output b y) = Output (a <> b) (x <> y)
+  Output a x <> Output b y = Output (a <> b) (x <> y)
 
 instance Monoid Output where
   mempty = Output mempty mempty
@@ -77,7 +77,8 @@ data Interrupt
   | InterruptException !IOException -- ^ When you receive this
                                     -- interrupt, you should consider
                                     -- the computation as ended.
-  deriving (Show,Read,Eq)
+  deriving (Show, Read, Eq)
+
 instance Error Interrupt
 
 -- | A pure IO monad.
@@ -87,12 +88,12 @@ newtype IO a = IO
   -- We purposely don't derive MonadState and MonadError, while it
   -- would aid programming minutely, such instances are internals that
   -- we don't want to export.
-  deriving (Monad,Functor,Applicative)
+  deriving (Monad, Functor, Applicative)
 
 -- | Run the IO monad. This should be called in succession. Depending
 -- on the type of interrupt, this function should be re-run with the
 -- same action but with additional input.
-runIO :: Input -> IO a -> (Either Interrupt a,Output)
+runIO :: Input -> IO a -> (Either Interrupt a, Output)
 runIO input m =
   second snd
          (runState (runErrorT (unIO m))
