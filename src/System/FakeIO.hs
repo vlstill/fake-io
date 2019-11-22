@@ -29,14 +29,14 @@ module System.FakeIO
 
 import           Control.Applicative
 import           Control.Arrow
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.State
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Monoid ( Monoid ( mappend, mempty ) )
 import           Data.Semigroup ( Semigroup ( (<>) ) )
-import           Prelude hiding (IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile)
+import           Prelude hiding ( IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile )
 import           Data.List
 import           Text.Read ( readMaybe )
 
@@ -85,11 +85,9 @@ data Interrupt
                                     -- the computation as ended.
   deriving (Show, Read, Eq)
 
-instance Error Interrupt
-
 -- | A pure IO monad.
 newtype IO a = IO
-  { unIO :: ErrorT Interrupt (State (Input,Output)) a
+  { unIO :: ExceptT Interrupt (State (Input,Output)) a
   }
   -- We purposely don't derive MonadState and MonadError, while it
   -- would aid programming minutely, such instances are internals that
@@ -102,7 +100,7 @@ newtype IO a = IO
 runIO :: Input -> IO a -> (Either Interrupt a, Output)
 runIO input m =
   second snd
-         (runState (runErrorT (unIO m))
+         (runState (runExceptT (unIO m))
                    (input { inputFiles = mempty }
                    ,mempty { outputFiles = inputFiles input }))
 

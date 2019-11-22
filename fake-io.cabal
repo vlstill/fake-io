@@ -1,5 +1,5 @@
 name:                fake-io
-version:             0.2.1.5
+version:             0.2.1.6
 synopsis:            Fake IO
 description:         Implementation of fake and pure IO monad for educational and testing purposes.
 license:             BSD3
@@ -18,7 +18,7 @@ library
   ghc-options:       -Wall -O2
   exposed-modules:   System.FakeIO
   build-depends:     base >= 4.9 && <5,
-                     mtl,
+                     mtl >= 2.2.1,
                      containers
 
 Test-Suite unit-fake-io
