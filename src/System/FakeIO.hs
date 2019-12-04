@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, LambdaCase #-}
 -- | Pure IO monad, intended for educational use.
 
 module System.FakeIO
@@ -86,9 +86,7 @@ data Interrupt
   deriving (Show, Read, Eq)
 
 -- | A pure IO monad.
-newtype IO a = IO
-  { unIO :: ExceptT Interrupt (State (Input,Output)) a
-  }
+newtype IO a = IO { unIO :: ExceptT Interrupt (State (Input, Output)) a }
   -- We purposely don't derive MonadState and MonadError, while it
   -- would aid programming minutely, such instances are internals that
   -- we don't want to export.
@@ -105,8 +103,7 @@ instance (Semigroup a, Monoid a) => Monoid (IO a) where
 -- on the type of interrupt, this function should be re-run with the
 -- same action but with additional input.
 runIO :: Input -> IO a -> (Either Interrupt a, Output)
-runIO input m =
-  second snd
+runIO input m = second snd
          (runState (runExceptT (unIO m))
                    (input { inputFiles = mempty }
                    ,mempty { outputFiles = inputFiles input }))
@@ -122,7 +119,7 @@ modifyFile fp f = modifyFiles (M.alter (Just . f . fromMaybe "") fp)
 
 -- | Modify the output files.
 modifyFiles :: (Map FilePath String -> Map FilePath String) -> IO ()
-modifyFiles f = IO (modify (\(i,o) -> (i,updateFile o)))
+modifyFiles f = IO (modify (\(i, o) -> (i, updateFile o)))
   where updateFile (Output stdout files) = Output stdout (f files)
 
 --------------------------------------------------------------------------------
@@ -139,7 +136,7 @@ putStr new = IO (modify (\(i,o) -> (i,o <> Output [new] mempty)))
 -- | Read a line from standard input.
 getLine :: IO String
 getLine = do
-  (Input is fs,_) <- IO get
+  (Input is fs, _) <- IO get
   case is of
     [] -> interrupt InterruptStdin
     (i:is') -> do IO (modify (first (const (Input is' fs))))
@@ -148,8 +145,7 @@ getLine = do
 -- | The 'readIO' function is similar to 'read' except that it signals
 -- parse failure to the 'IO' monad instead of terminating the program.
 readIO :: Read a => String -> IO a
-readIO s =
-  case readMaybe s of
+readIO s = case readMaybe s of
     Nothing -> throw (UserError "readIO: no parse")
     Just r -> return r
 
@@ -177,23 +173,18 @@ throw = interrupt . InterruptException
 -- | Catch an IO exception.
 catch :: IO a -> (IOException -> IO a) -> IO a
 catch (IO m) f = IO (catchError m handler)
-  where handler i =
-          case i of
-            InterruptException e ->
-              let (IO m') = f e
-              in m'
-            _ -> throwError i
+  where
+    handler (InterruptException e) = let (IO m') = f e in m'
+    handler i = throwError i
 
 
 -- | The 'readFile' function reads a file and
 -- returns the contents of the file as a string.
 -- The file is read lazily, on demand, as with 'getContents'.
 readFile :: FilePath -> IO String
-readFile fp =
-  do mbytes <- IO (gets (M.lookup fp . outputFiles . snd))
-     case mbytes of
-       Nothing -> throw (FileNotFound fp)
-       Just bytes -> return bytes
+readFile fp = IO (gets (M.lookup fp . outputFiles . snd)) >>= \case
+                Nothing -> throw (FileNotFound fp)
+                Just bytes -> return bytes
 
 -- | The computation 'writeFile' @file str@ function writes the string @str@,
 -- to the file @file@.
@@ -219,18 +210,17 @@ doesFileExist fp = fmap isJust (IO (gets (M.lookup fp . outputFiles . snd)))
 -- | 'removeFile' /file/ removes the directory entry for an existing
 -- file /file/.
 removeFile :: FilePath -> IO ()
-removeFile fp = do
-  exists <- doesFileExist fp
-  if exists
-     then modifyFiles (M.delete fp)
-     else throw (FileNotFound fp)
+removeFile fp = doesFileExist fp >>= \case
+                  True ->  modifyFiles (M.delete fp)
+                  False -> throw (FileNotFound fp)
 
 -- | Get all files in the given directory.
 getDirectoryContents :: FilePath -> IO [FilePath]
-getDirectoryContents fp =
-  do entries <- IO (gets (M.keys . outputFiles . snd))
-     case filter (isPrefixOf fp') entries of
-       [] -> throw (DirectoryNotFound fp)
-       fs -> return fs
-  where fp' | "/" `isSuffixOf` fp = fp
-            | otherwise = fp ++ "/"
+getDirectoryContents fp = do
+    entries <- IO (gets (M.keys . outputFiles . snd))
+    case filter (isPrefixOf fp') entries of
+        [] -> throw (DirectoryNotFound fp)
+        fs -> return fs
+  where
+    fp' | "/" `isSuffixOf` fp = fp
+        | otherwise = fp ++ "/"
