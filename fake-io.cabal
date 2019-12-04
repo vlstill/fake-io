@@ -1,5 +1,5 @@
 name:                fake-io
-version:             0.2.1.6
+version:             0.2.2.0
 synopsis:            Fake IO
 description:         Implementation of fake and pure IO monad for educational and testing purposes.
 license:             BSD3
