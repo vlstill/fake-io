@@ -5,7 +5,8 @@
 import System.Exit ( exitFailure, exitSuccess )
 import Prelude hiding (IO, putStr, putStrLn, getLine, readLn, print, readIO, readFile, writeFile, appendFile)
 import System.FakeIO
-import Test.QuickCheck ( Property, quickCheckAll, (===) )
+import Test.QuickCheck ( Property, quickCheckAll, (===), (.&&.) )
+import Data.Map ( insert )
 
 runEmptyIO = runIO (Input [] mempty)
 
@@ -41,12 +42,36 @@ prop_throw :: Property
 prop_throw = runEmptyIO (throw $ UserError "err") ===
              (Left (InterruptException (UserError "err")) :: Either Interrupt (), mempty)
 
+prop_readFile :: String -> Property
+prop_readFile str = runIO (Input [] fs) (readFile "/a") === (Right str, mempty { outputFiles = fs })
+  where
+    fs = insert "/a" str mempty
+
+prop_writeFile :: String -> Property
+prop_writeFile str = runEmptyIO (writeFile "/a" str) === (Right (), mempty { outputFiles = fs })
+  where
+    fs = insert "/a" str mempty
+
+prop_appendFile :: String -> String -> Property
+prop_appendFile a b = runIO (Input [] fs1) (appendFile "/a" b) === (Right (), mempty { outputFiles = fs2 })
+  where
+    fs1 = insert "/a" a mempty
+    fs2 = insert "/a" (a <> b) mempty
+
+prop_doesFileExist :: Property
+prop_doesFileExist = runIO (Input [] fs) (doesFileExist "/a") === (Right True, mempty { outputFiles = fs })
+                .&&. runIO (Input [] fs) (doesFileExist "/A") === (Right False, mempty { outputFiles = fs })
+  where
+    fs = insert "/a" "" mempty
+
+prop_removeFile :: Property
+prop_removeFile = runIO (Input [] fs) (removeFile "/a") === (Right (), mempty)
+             .&&. runIO (Input [] fs) (removeFile "/A") ===
+                      (Left (InterruptException (FileNotFound "/A")), mempty { outputFiles = fs })
+  where
+    fs = insert "/a" "" mempty
+
 {- TODO
-  ,readFile
-  ,writeFile
-  ,appendFile
-  ,doesFileExist
-  ,removeFile
   ,getDirectoryContents
 -}
 
