@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, LambdaCase #-}
+{-# LANGUAGE LambdaCase, TupleSections, Rank2Types, NamedFieldPuns #-}
 -- | Pure IO monad, intended for educational use.
 
 module System.FakeIO
@@ -29,8 +29,12 @@ module System.FakeIO
 
 import           Control.Applicative ( liftA2 )
 import           Control.Arrow ( first, second )
-import           Control.Monad.Except ( ExceptT, runExceptT, throwError, catchError )
-import           Control.Monad.State ( State, runState, modify, get, gets )
+import           Control.Monad.Trans.Except ( ExceptT, runExceptT, throwE, catchE )
+import           Control.Monad.Trans.Reader ( ReaderT, runReaderT, asks )
+import           Control.Monad.ST ( ST, runST )
+import           Data.STRef ( STRef, newSTRef, readSTRef, writeSTRef, modifySTRef )
+import           Data.Text ( Text )
+import qualified Data.Text as T
 import           Data.Map ( Map )
 import qualified Data.Map as M
 import           Data.Maybe ( fromMaybe, isJust )
@@ -85,12 +89,31 @@ data Interrupt
                                     -- the computation as ended.
   deriving (Show, Read, Eq)
 
+data IOContext s = IOContext { stdIn :: STRef s [Text]
+                             , stdOutRev :: STRef s [Text]
+                             , stdErrRev :: STRef s [Text]
+                             , filesystem :: STRef s ()
+                             }
+
 -- | A pure IO monad.
-newtype IO a = IO { unIO :: ExceptT Interrupt (State (Input, Output)) a }
-  -- We purposely don't derive MonadState and MonadError, while it
-  -- would aid programming minutely, such instances are internals that
-  -- we don't want to export.
-  deriving (Monad, Functor, Applicative)
+newtype IO a = IO { unIO :: forall s. ExceptT Interrupt (ReaderT (IOContext s) (ST s)) a }
+
+-- We purposely don't define MonadState and MonadError, while it
+-- would aid programming minutely, such instances are internals that
+-- we don't want to export.
+--
+-- Sadly, we can't derive instances due to the nested type variable s.
+instance Functor IO where
+    fmap f (IO a) = IO (fmap f a)
+
+instance Applicative IO where
+    IO f <*> IO x = IO $ f <*> x
+    pure x = IO $ pure x
+
+instance Monad IO where
+    IO x >>= f = IO $ x >>= unIO . f
+    return = pure
+
 
 instance Semigroup a => Semigroup (IO a) where
   (<>) = liftA2 (<>)
@@ -103,15 +126,35 @@ instance (Semigroup a, Monoid a) => Monoid (IO a) where
 -- on the type of interrupt, this function should be re-run with the
 -- same action but with additional input.
 runIO :: Input -> IO a -> (Either Interrupt a, Output)
-runIO input m = second snd
+runIO input m = runST $ do
+    state <- load input
+    r <- runReaderT (runExceptT (unIO m)) state
+    o <- getOutput state
+    pure (r, o)
+  where
+    load :: Input -> ST s (IOContext s)
+    load Input { inputStdin } = do
+        stdIn <- newSTRef (map T.pack inputStdin)
+        stdOutRev <- newSTRef []
+        stdErrRev <- newSTRef []
+        filesystem <- newSTRef ()
+        pure IOContext { stdIn, stdOutRev, stdErrRev, filesystem }
+
+    getOutput :: IOContext s -> ST s Output
+    getOutput IOContext { stdOutRev } = do
+        outputStdout <- map T.unpack . reverse <$> readSTRef stdOutRev
+        pure mempty { outputStdout }
+
+{-
+second snd
          (runState (runExceptT (unIO m))
                    (input { inputFiles = mempty }
                    ,mempty { outputFiles = inputFiles input }))
-
+-}
 -- | Interrupt the IO monad. This stops the IO monad computation,
 -- allowing for any resumption later.
 interrupt :: Interrupt -> IO a
-interrupt = IO . throwError
+interrupt = IO . throwE
 
 -- | Modify the given file.
 modifyFile :: FilePath -> (String -> String) -> IO ()
@@ -175,7 +218,7 @@ catch :: IO a -> (IOException -> IO a) -> IO a
 catch (IO m) f = IO (catchError m handler)
   where
     handler (InterruptException e) = let (IO m') = f e in m'
-    handler i = throwError i
+    handler i = throwE i
 
 
 -- | The 'readFile' function reads a file and
